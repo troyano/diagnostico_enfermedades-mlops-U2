@@ -23,8 +23,8 @@ def test_tema_streamlit() -> None:
     assert config["theme"]["backgroundColor"] == "#0C0C14"
 
 
-def test_ejemplos_son_validos_y_cubren_los_cuatro_casos() -> None:
-    assert [e.clave for e in EJEMPLOS] == ["no", "leve", "aguda", "cronica"]
+def test_ejemplos_son_validos_y_cubren_los_cinco_casos() -> None:
+    assert [e.clave for e in EJEMPLOS] == ["no", "leve", "aguda", "cronica", "terminal"]
     for e in EJEMPLOS:
         tabla = tabla_sintomas(e.sintomas)
         assert validar_consulta(e.nombre, e.temperatura, tabla.to_dict("records")).ok

@@ -19,6 +19,12 @@ CASOS = [
     (37.0, [s(9, 30)], EstadoSalud.CRONICA),
     (37.5, [], EstadoSalud.LEVE),
     (37.0, [s(6, 29)], EstadoSalud.LEVE),
+    # ENFERMEDAD TERMINAL: un mismo síntoma con intensidad >= 9 y >= 90 días
+    (37.0, [s(9, 90)], EstadoSalud.TERMINAL),
+    (39.5, [s(10, 365), s(3, 2)], EstadoSalud.TERMINAL),
+    (37.0, [s(9, 89)], EstadoSalud.CRONICA),
+    (37.0, [s(8, 120)], EstadoSalud.CRONICA),
+    (37.0, [s(9, 5), s(2, 120)], EstadoSalud.CRONICA),
 ]
 
 
@@ -36,3 +42,13 @@ def test_resumen_y_regla() -> None:
 
 def test_regla_sin_sintomas_con_fiebre() -> None:
     assert predecir(38.0, []).regla == "Temperatura elevada sin síntomas reportados"
+
+
+def test_regla_terminal() -> None:
+    r = predecir(37.2, [s(9, 120), s(6, 150)])
+    assert r.estado == EstadoSalud.TERMINAL
+    assert r.regla == "Un síntoma de intensidad 9 o más con 90 días o más de duración"
+
+
+def test_las_cinco_categorias_se_alcanzan() -> None:
+    assert {predecir(t, sx).estado for t, sx, _ in CASOS} == set(EstadoSalud)

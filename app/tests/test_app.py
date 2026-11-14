@@ -19,7 +19,7 @@ RESPUESTA: dict[str, Any] = {
     "estado": "ENFERMEDAD AGUDA",
     "regla": "Intensidad de 7 o más",
     "resumen": {"cantidad_sintomas": 4, "intensidad_maxima": 8, "duracion_maxima_dias": 3},
-    "version_modelo": "simulado-0.1.0",
+    "version_modelo": "simulado-0.2.0",
     "aviso": "Solo didáctico.",
 }
 
@@ -71,6 +71,9 @@ def test_ejemplos_y_limpiar(api: list[dict[str, Any]]) -> None:
     at.button(key="ej_cronica").click().run()
     assert at.text_input(key="nombre").value == "Jorge Salazar Mena"
     assert at.number_input(key="temperatura").value == 36.8
+    at.button(key="ej_terminal").click().run()
+    assert at.text_input(key="nombre").value == "Rosa Delgado Peña"
+    assert at.number_input(key="temperatura").value == 37.2
     at.button(key="limpiar").click().run()
     assert at.text_input(key="nombre").value == ""
     assert at.number_input(key="temperatura").value is None

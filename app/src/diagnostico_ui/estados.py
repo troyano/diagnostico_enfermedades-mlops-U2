@@ -14,6 +14,7 @@ ESTADOS: dict[str, Estado] = {
     "ENFERMEDAD LEVE": Estado("ENFERMEDAD LEVE", "leve"),
     "ENFERMEDAD AGUDA": Estado("ENFERMEDAD AGUDA", "aguda"),
     "ENFERMEDAD CRÓNICA": Estado("ENFERMEDAD CRÓNICA", "cronica"),
+    "ENFERMEDAD TERMINAL": Estado("ENFERMEDAD TERMINAL", "terminal"),
 }
 
 

@@ -1,7 +1,8 @@
 # mlops-enfermedades
 
 Servicio de apoyo al médico que, a partir de síntomas del paciente, devuelve un estado simulado:
-**NO ENFERMO**, **ENFERMEDAD LEVE**, **ENFERMEDAD AGUDA** o **ENFERMEDAD CRÓNICA**.
+**NO ENFERMO**, **ENFERMEDAD LEVE**, **ENFERMEDAD AGUDA**, **ENFERMEDAD CRÓNICA** o
+**ENFERMEDAD TERMINAL**.
 No hay un modelo entrenado: una función con reglas simula el modelo (Semanas 1-2 de MLOps).
 
 ## Objetivo del taller
@@ -118,18 +119,40 @@ curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
 curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
   -d '{"nombre":"Jorge Salazar Mena","temperatura":36.8,"sintomas":[
         {"descripcion":"Dolor articular","intensidad":3,"duracion_dias":45}]}'
+
+# ENFERMEDAD TERMINAL
+curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
+  -d '{"nombre":"Rosa Delgado Peña","temperatura":37.2,"sintomas":[
+        {"descripcion":"Dolor óseo","intensidad":9,"duracion_dias":120},
+        {"descripcion":"Pérdida de peso","intensidad":6,"duracion_dias":150}]}'
 ```
 
 La respuesta incluye `id`, `fecha`, `estado`, `regla` (la regla aplicada), `resumen`,
 `version_modelo` y un `aviso` didáctico.
 
 La función `predecir()` usa la temperatura y, de la lista de síntomas, la cantidad, la intensidad
-máxima y la duración máxima en días. Reglas, evaluadas en orden (la primera que se cumple):
+máxima, la duración máxima en días y si algún síntoma es a la vez muy intenso y prolongado. Reglas,
+evaluadas en orden (la primera que se cumple):
 
 1. **NO ENFERMO:** sin síntomas y temperatura menor a 37,5 °C.
-2. **ENFERMEDAD CRÓNICA:** hay síntomas y alguno dura 30 días o más.
-3. **ENFERMEDAD AGUDA:** hay síntomas y (intensidad máxima de 7 o más, o temperatura de 38,5 °C o más).
-4. **ENFERMEDAD LEVE:** cualquier otro caso.
+2. **ENFERMEDAD TERMINAL:** un mismo síntoma tiene intensidad de 9 o más y dura 90 días o más.
+3. **ENFERMEDAD CRÓNICA:** hay síntomas y alguno dura 30 días o más.
+4. **ENFERMEDAD AGUDA:** hay síntomas y (intensidad máxima de 7 o más, o temperatura de 38,5 °C o más).
+5. **ENFERMEDAD LEVE:** cualquier otro caso.
+
+TERMINAL va antes que CRÓNICA porque es la más grave y, de lo contrario, CRÓNICA la atraparía
+(todo síntoma de 90 días o más también supera los 30). Exigir que la intensidad y la duración sean
+del **mismo** síntoma evita que un síntoma leve y prolongado, sumado a otro intenso y breve, se
+clasifique como terminal: en ese caso el resultado es CRÓNICA. La versión de las reglas es
+`simulado-0.2.0`.
+
+| Temperatura | Síntomas (intensidad, días) | Estado |
+|---|---|---|
+| 37,0 | (9, 90) | ENFERMEDAD TERMINAL |
+| 39,5 | (10, 365), (3, 2) | ENFERMEDAD TERMINAL |
+| 37,0 | (9, 89) | ENFERMEDAD CRÓNICA |
+| 37,0 | (8, 120) | ENFERMEDAD CRÓNICA |
+| 37,0 | (9, 5), (2, 120) | ENFERMEDAD CRÓNICA |
 
 Si los datos no son válidos, la API responde `422` con mensajes en español:
 

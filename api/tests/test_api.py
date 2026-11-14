@@ -9,7 +9,7 @@ def sint(i: int = 5, d: int = 2, desc: str = "Tos seca") -> dict[str, Any]:
     return {"descripcion": desc, "intensidad": i, "duracion_dias": d}
 
 
-def test_cuatro_estados(client: TestClient) -> None:
+def test_cinco_estados(client: TestClient) -> None:
     casos = [
         (BASE, "NO ENFERMO"),
         ({**BASE, "temperatura": 37.0, "sintomas": [sint(2, 2), sint(1, 2)]}, "ENFERMEDAD LEVE"),
@@ -22,11 +22,17 @@ def test_cuatro_estados(client: TestClient) -> None:
             "ENFERMEDAD AGUDA",
         ),
         ({**BASE, "temperatura": 36.8, "sintomas": [sint(3, 45)]}, "ENFERMEDAD CRÓNICA"),
+        (
+            {**BASE, "temperatura": 37.2, "sintomas": [sint(9, 120), sint(6, 150)]},
+            "ENFERMEDAD TERMINAL",
+        ),
     ]
     for cuerpo, estado in casos:
         r = client.post("/predecir", json=cuerpo)
         assert r.status_code == 200
         assert r.json()["estado"] == estado
+    estados = {c["estado"] for c in client.get("/consultas").json()}
+    assert len(estados) == 5
 
 
 def test_respuesta_completa(client: TestClient) -> None:
@@ -34,7 +40,7 @@ def test_respuesta_completa(client: TestClient) -> None:
     data = r.json()
     assert data["id"] == "C-0001"
     assert data["nombre"] == "Laura Martínez Gil"
-    assert data["version_modelo"] == "simulado-0.1.0"
+    assert data["version_modelo"] == "simulado-0.2.0"
     assert data["fecha"].endswith("Z") or "+00:00" in data["fecha"]
     assert data["resumen"] == {
         "cantidad_sintomas": 0,

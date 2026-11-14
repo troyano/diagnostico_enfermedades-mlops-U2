@@ -7,7 +7,7 @@ Boceto y decisiones de la interfaz para el médico (servicio `app/`, Streamlit).
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │ ████ Apoyo a la decisión médica ████ │ ░░ Uso didáctico ░░░░░░ │
-│ ████ MLOps · Semanas 1 y 2       ████ │ ░░ (aviso de reglas) ░░ │
+│ ████ MLOps · Unidad 2            ████ │ ░░ (aviso de reglas) ░░ │
 ├───────────────────────────────────────┬────────────────────────┤
 │ Nueva consulta                        │ Resultado              │
 │ Nombre completo [________________]    │ ┌────────────────────┐ │
@@ -20,8 +20,8 @@ Boceto y decisiones de la interfaz para el médico (servicio `app/`, Streamlit).
 │ │ Fiebre alta      │   7    │  3  │✕ ││ Temperatura    39,0 °C │
 │ └──────────────────┴────────┴─────┴──┘│ Paciente · consulta ·  │
 │ [+ Agregar síntoma]                   │ versión del modelo     │
-│ Ejemplos: [No enfermo][Leve]          │                        │
-│           [Aguda][Crónica]            │                        │
+│ Ejemplos: [No enfermo][Leve][Aguda]   │                        │
+│           [Crónica][Terminal]         │                        │
 │ [Consultar]  [Limpiar formulario]     │                        │
 ├───────────────────────────────────────┴────────────────────────┤
 │ Historial de consultas (más recientes primero)                 │
@@ -39,7 +39,8 @@ Boceto y decisiones de la interfaz para el médico (servicio `app/`, Streamlit).
 - **Resultado:** estado con color propio, regla aplicada, versión del modelo y aviso didáctico.
 - **Historial:** cada consulta se guarda en un archivo JSON dentro de un volumen del contenedor de la API; la interfaz lo muestra en una tabla.
 - **Estilos:** una sola hoja de estilos (`styles.css`) cargada desde un único punto, más el tema base de Streamlit en `.streamlit/config.toml`.
-- **Paleta:** azul índigo `#5657EC`, lima `#E3EA55`, negro y blanco, con verde `#4DB87B`, naranja `#EB6B3F` y violeta `#8A5CF0` para los estados. Tipografías Sora (títulos) y Figtree (texto).
+- **Paleta:** azul índigo `#5657EC`, lima `#E3EA55`, negro y blanco, con verde `#4DB87B`, naranja `#EB6B3F`, violeta `#8A5CF0` y rojo `#C8344D` para los estados. Tipografías Sora (títulos) y Figtree (texto).
+- **Ejemplos:** cinco botones, uno por estado, en dos filas (3 y 2) para que las etiquetas no se corten en pantallas angostas.
 - **Pie de página:** institución, facultad, programa, materia e integrantes del grupo.
 
 ## Colores por estado
@@ -50,6 +51,7 @@ Boceto y decisiones de la interfaz para el médico (servicio `app/`, Streamlit).
 | ENFERMEDAD LEVE | Lima |
 | ENFERMEDAD AGUDA | Naranja |
 | ENFERMEDAD CRÓNICA | Violeta |
+| ENFERMEDAD TERMINAL | Rojo `#C8344D` (texto blanco, contraste 5,2:1) |
 
 ## Nota sobre datos personales
 

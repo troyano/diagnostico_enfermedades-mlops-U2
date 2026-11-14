@@ -32,10 +32,10 @@ def _e(valor: Any) -> str:
 def hero_html() -> str:
     return (
         '<header class="dx-hero">'
-        '<div class="dx-hero-a"><div class="dx-eyebrow">MLOps · Semanas 1 y 2</div>'
+        '<div class="dx-hero-a"><div class="dx-eyebrow">MLOps · Unidad 2</div>'
         f"<h1>{_e(TITULO)}</h1>"
         "<p>Registra los síntomas del paciente y obtén un estado simulado: no enfermo, "
-        "leve, agudo o crónico.</p></div>"
+        "leve, agudo, crónico o terminal.</p></div>"
         '<div class="dx-hero-b"><strong>Uso didáctico</strong>'
         f"<span>{_e(AVISO)}</span></div></header>"
     )
