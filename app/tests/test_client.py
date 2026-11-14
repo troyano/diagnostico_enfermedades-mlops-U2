@@ -8,6 +8,7 @@ from diagnostico_ui.client import (
     ApiUnavailableError,
     ApiValidationError,
     consultas,
+    estadisticas,
     health,
     predecir,
 )
@@ -119,3 +120,18 @@ def test_consultas_respuesta_inesperada() -> None:
     transport = httpx.MockTransport(lambda r: httpx.Response(200, json={"a": 1}))
     with pytest.raises(ApiError):
         consultas("http://x", client=_client(transport))
+
+
+def test_estadisticas_ok_y_respuesta_inesperada() -> None:
+    reporte = {"total_predicciones": 0, "ultimas_predicciones": []}
+    vistos: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        vistos.append(request)
+        return httpx.Response(200, json=reporte)
+
+    assert estadisticas("http://x", _client(httpx.MockTransport(handler))) == reporte
+    assert vistos[0].method == "GET" and vistos[0].url.path == "/estadisticas"
+    lista = httpx.MockTransport(lambda r: httpx.Response(200, json=[]))
+    with pytest.raises(ApiError):
+        estadisticas("http://x", _client(lista))

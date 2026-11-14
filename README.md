@@ -35,6 +35,7 @@ La solución de partida es la entrega de la Unidad 1, en
 | Función simulada con los 5 estados | [`api/src/diagnostico_api/model.py`](api/src/diagnostico_api/model.py), función `predecir()` |
 | Dockerfiles | [`api/Dockerfile`](api/Dockerfile) (API) y [`app/Dockerfile`](app/Dockerfile) (interfaz) |
 | Forma de recibir los datos del médico | Página web en Streamlit (puerto 8501) y punto final `POST /predecir` en FastAPI (puerto 8000) |
+| Reporte de estadísticas | Punto final `GET /estadisticas` ([`api/src/diagnostico_api/estadisticas.py`](api/src/diagnostico_api/estadisticas.py)), archivo exportado `/data/predicciones.csv` y sección "Estadísticas" de la interfaz |
 | Pruebas | `api/tests/` y `app/tests/` |
 | Diseño de la interfaz | [`docs/interfaz.md`](docs/interfaz.md) |
 
@@ -181,6 +182,38 @@ docker run --rm -p 8000:8000 -v consultas:/data diagnostico-api
 ```
 
 El historial contiene nombres de pacientes: usa solo datos ficticios en la demostración.
+
+### Reporte de estadísticas
+
+En cada predicción, la API también **exporta una línea de texto** a `/data/predicciones.csv`, en el
+mismo volumen, con el id, la fecha (UTC), el paciente y el estado:
+
+```text
+id,fecha,nombre,estado
+C-0001,2026-11-14T23:49:07.247278Z,Laura Martínez Gil,NO ENFERMO
+C-0002,2026-11-14T23:49:07.306106Z,Rosa Delgado Peña,ENFERMEDAD TERMINAL
+```
+
+`GET /estadisticas` lee ese archivo y devuelve a los médicos el **total de predicciones por cada
+categoría**, las **últimas 5 predicciones** (la más reciente primero) y la **fecha de la última**:
+
+```bash
+curl -s localhost:8000/estadisticas
+# {"total_predicciones":2,
+#  "por_categoria":{"NO ENFERMO":1,"ENFERMEDAD LEVE":0,"ENFERMEDAD AGUDA":0,
+#                   "ENFERMEDAD CRÓNICA":0,"ENFERMEDAD TERMINAL":1},
+#  "ultimas_predicciones":[{"id":"C-0002","fecha":"2026-11-14T23:49:07.306106Z",
+#                           "nombre":"Rosa Delgado Peña","estado":"ENFERMEDAD TERMINAL"}, ...],
+#  "fecha_ultima_prediccion":"2026-11-14T23:49:07.306106Z"}
+```
+
+Antes de la primera predicción responde `200` con las 5 categorías en 0, la lista vacía y
+`"fecha_ultima_prediccion": null`. La interfaz muestra lo mismo en la sección **Estadísticas**,
+encima del historial.
+
+Si el volumen `consultas` viene de una versión anterior, las consultas viejas siguen en el historial
+pero no en el reporte, porque se crearon antes de que existiera el archivo exportado. Para una
+demostración desde cero: `docker compose down -v`.
 
 ## Desarrollo
 

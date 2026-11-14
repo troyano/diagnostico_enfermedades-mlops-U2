@@ -81,3 +81,21 @@ class Consulta(BaseModel):
     resumen: Resumen
     version_modelo: str
     aviso: str
+
+
+class PrediccionReciente(BaseModel):
+    """Una predicción tal como se exporta al archivo de texto del reporte."""
+
+    id: str
+    fecha: datetime
+    nombre: str
+    estado: EstadoSalud
+
+
+class Estadisticas(BaseModel):
+    """Respuesta de GET /estadisticas."""
+
+    total_predicciones: int
+    por_categoria: dict[EstadoSalud, int]
+    ultimas_predicciones: list[PrediccionReciente]
+    fecha_ultima_prediccion: datetime | None

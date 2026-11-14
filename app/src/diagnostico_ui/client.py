@@ -108,3 +108,13 @@ def consultas(
     if not isinstance(data, list):
         raise ApiError("Respuesta inesperada de /consultas.")
     return data
+
+
+def estadisticas(
+    base_url: str, client: httpx.Client | None = None, timeout: float = 10.0
+) -> dict[str, Any]:
+    """Consulta GET /estadisticas: total por categoría, últimas 5 y fecha de la última."""
+    data = _json(_send("GET", f"{base_url}/estadisticas", client, timeout))
+    if not isinstance(data, dict):
+        raise ApiError("Respuesta inesperada de /estadisticas.")
+    return data

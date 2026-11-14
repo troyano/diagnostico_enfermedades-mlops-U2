@@ -10,6 +10,7 @@ from diagnostico_ui.config import get_api_url
 from diagnostico_ui.contenido import EJEMPLOS
 from diagnostico_ui.formulario import ejemplo_por_clave, estado_inicial, tabla_sintomas
 from diagnostico_ui.render import (
+    estadisticas_html,
     footer_html,
     hero_html,
     historial_html,
@@ -118,6 +119,21 @@ def _resultado() -> None:
     st.markdown(html, unsafe_allow_html=True)
 
 
+def _estadisticas(api_url: str) -> None:
+    with st.container(border=True):
+        st.subheader("Estadísticas")
+        st.caption(
+            "Total por categoría, últimas 5 predicciones y fecha de la última. La API las lee "
+            "del archivo de texto que exporta en cada predicción."
+        )
+        try:
+            datos = client.estadisticas(api_url)
+        except client.ApiError as exc:
+            st.warning(f"No se pudieron cargar las estadísticas: {exc}")
+            return
+        st.markdown(estadisticas_html(datos), unsafe_allow_html=True)
+
+
 def _historial(api_url: str) -> None:
     with st.container(border=True):
         st.subheader("Historial de consultas")
@@ -142,6 +158,7 @@ def main() -> None:
         _formulario(api_url)
     with derecha:
         _resultado()
+    _estadisticas(api_url)
     _historial(api_url)
     st.markdown(footer_html(), unsafe_allow_html=True)
 

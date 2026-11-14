@@ -8,8 +8,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from diagnostico_api.config import Settings, get_settings
+from diagnostico_api.estadisticas import calcular_estadisticas
 from diagnostico_api.model import AVISO, VERSION_MODELO, predecir
-from diagnostico_api.schemas import Consulta, ConsultaEntrada
+from diagnostico_api.schemas import Consulta, ConsultaEntrada, Estadisticas
 from diagnostico_api.storage import ConsultaStorage
 
 
@@ -80,6 +81,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/consultas", tags=["consultas"], response_model=list[Consulta])
     def get_consultas(limite: Annotated[int, Query(ge=1, le=1000)] = 100) -> list[Consulta]:
         return storage.list(limite)
+
+    @app.get("/estadisticas", tags=["estadisticas"], response_model=Estadisticas)
+    def get_estadisticas() -> Estadisticas:
+        """Total por categoría, últimas 5 predicciones y fecha de la última."""
+        return calcular_estadisticas(storage.predicciones())
 
     return app
 

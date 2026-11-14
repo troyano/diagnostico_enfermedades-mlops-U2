@@ -66,6 +66,12 @@ div[data-testid="stTextInput"] input, div[data-testid="stNumberInput"] input { m
 .dx-estado-terminal { background: var(--dx-red); color: #fff; }
 .dx-estado-neutro { background: var(--dx-line); color: var(--dx-fg); }
 
+/* --- Estadísticas --- */
+.dx-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 4px 0 10px; }
+.dx-stat { border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.dx-stat small { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.dx-stat strong { font-family: var(--dx-display); font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+
 /* --- Historial --- */
 .dx-scroll { overflow-x: auto; }
 .dx-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 620px; }
@@ -83,4 +89,5 @@ div[data-testid="stTextInput"] input, div[data-testid="stNumberInput"] input { m
   .dx-hero { grid-template-columns: 1fr; }
   .dx-hero > div { padding: 22px 20px 24px; }
   .dx-eyebrow { margin-bottom: 24px; }
+  .dx-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
