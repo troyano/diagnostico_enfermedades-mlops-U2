@@ -103,7 +103,7 @@ jobs:
           --body "CI/CD terminado con errores. Revisa la pestaña Checks antes de fusionar."
 
   publicar:
-    name: Publicar imagen (${{ matrix.imagen }})
+    name: Publicar imagen
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: pruebas
     runs-on: ubuntu-latest
