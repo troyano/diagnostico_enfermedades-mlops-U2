@@ -1,5 +1,7 @@
-"""Interfaz Streamlit para el médico: consulta, resultado e historial."""
+"""Interfaz Streamlit para el médico: menú con Consultas (formulario, resultado e historial) y
+Estadísticas (reporte y descarga en Excel)."""
 
+from datetime import UTC, datetime
 from typing import Any
 
 import pandas as pd
@@ -10,16 +12,21 @@ from diagnostico_ui.config import get_api_url
 from diagnostico_ui.contenido import EJEMPLOS
 from diagnostico_ui.formulario import ejemplo_por_clave, estado_inicial, tabla_sintomas
 from diagnostico_ui.render import (
+    estadisticas_html,
     footer_html,
     hero_html,
     historial_html,
     resultado_html,
     resultado_vacio_html,
 )
+from diagnostico_ui.reporte import MIME_XLSX, nombre_archivo, reporte_excel
 from diagnostico_ui.styles import inject_styles
 from diagnostico_ui.validation import MAX_SINTOMAS, validar_consulta
 
 POR_FILA = 3  # botones de ejemplo por fila
+CONSULTAS, ESTADISTICAS = "Consultas", "Estadísticas"
+VISTAS = (CONSULTAS, ESTADISTICAS)
+ICONOS = {CONSULTAS: ":material/stethoscope:", ESTADISTICAS: ":material/bar_chart:"}
 
 
 def _cargar_ejemplo(clave: str) -> None:
@@ -91,6 +98,7 @@ def _formulario(api_url: str) -> None:
                 ),
             },
         )
+        ss.sintomas_editados = sintomas  # se conserva al cambiar de vista en el menú
         st.markdown('<div class="dx-label">Cargar un ejemplo</div>', unsafe_allow_html=True)
         # Dos filas (3 y 2) para que las etiquetas no se corten en pantallas angostas
         for inicio in range(0, len(EJEMPLOS), POR_FILA):
@@ -118,6 +126,31 @@ def _resultado() -> None:
     st.markdown(html, unsafe_allow_html=True)
 
 
+def _estadisticas(api_url: str) -> None:
+    with st.container(border=True):
+        st.subheader("Estadísticas")
+        st.caption(
+            "Total por categoría, últimas 5 predicciones y fecha de la última. La API las lee "
+            "del archivo de texto que exporta en cada predicción."
+        )
+        try:
+            datos = client.estadisticas(api_url)
+        except client.ApiError as exc:
+            st.warning(f"No se pudieron cargar las estadísticas: {exc}")
+            return
+        st.markdown(estadisticas_html(datos), unsafe_allow_html=True)
+        generado = datetime.now(UTC)
+        st.download_button(
+            "Descargar reporte en Excel",
+            data=reporte_excel(datos, generado),
+            file_name=nombre_archivo(generado),
+            mime=MIME_XLSX,
+            key="descargar_excel",
+            type="primary",
+            on_click="ignore",
+        )
+
+
 def _historial(api_url: str) -> None:
     with st.container(border=True):
         st.subheader("Historial de consultas")
@@ -130,19 +163,43 @@ def _historial(api_url: str) -> None:
         st.markdown(historial_html(consultas), unsafe_allow_html=True)
 
 
+def _cambiar_vista() -> None:
+    """Antes de dejar el formulario, guarda los síntomas editados para no perderlos."""
+    ss = st.session_state
+    if "sintomas_editados" in ss:
+        ss.sintomas = ss.sintomas_editados
+        ss.editor_version += 1
+
+
+def _menu() -> str:
+    vista = st.segmented_control(
+        "Menú", VISTAS, key="vista", default=CONSULTAS, required=True,
+        format_func=lambda v: f"{ICONOS[v]} {v}", on_change=_cambiar_vista,
+        label_visibility="collapsed", width="stretch",
+    )  # fmt: skip
+    return str(vista or CONSULTAS)
+
+
 def main() -> None:
     st.set_page_config(page_title="Apoyo a la decisión médica", page_icon="🩺", layout="wide")
     inject_styles()
     for clave, valor in estado_inicial().items():
         st.session_state.setdefault(clave, valor)
+    # Streamlit borra el estado de los widgets que no se dibujan: se reasigna para conservar
+    # el nombre y la temperatura mientras se está en la vista de estadísticas.
+    for clave in ("nombre", "temperatura"):
+        st.session_state[clave] = st.session_state[clave]
     api_url = get_api_url()
     st.markdown(hero_html(), unsafe_allow_html=True)
-    izquierda, derecha = st.columns([1.35, 1], gap="large")
-    with izquierda:
-        _formulario(api_url)
-    with derecha:
-        _resultado()
-    _historial(api_url)
+    if _menu() == ESTADISTICAS:
+        _estadisticas(api_url)
+    else:
+        izquierda, derecha = st.columns([1.35, 1], gap="large")
+        with izquierda:
+            _formulario(api_url)
+        with derecha:
+            _resultado()
+        _historial(api_url)
     st.markdown(footer_html(), unsafe_allow_html=True)
 
 

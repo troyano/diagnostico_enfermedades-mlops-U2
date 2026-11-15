@@ -2,6 +2,7 @@ from typing import Any
 
 from diagnostico_ui.estados import ESTADOS, obtener_estado
 from diagnostico_ui.render import (
+    estadisticas_html,
     footer_html,
     formato_fecha,
     formato_temperatura,
@@ -61,3 +62,33 @@ def test_formatos_tolerantes() -> None:
     assert formato_temperatura(None) == "—"
     assert formato_fecha("no es fecha") == "no es fecha"
     assert formato_fecha(None) == ""
+
+
+def test_estadisticas_vacias_muestran_ceros_y_mensaje() -> None:
+    html = estadisticas_html(
+        {
+            "total_predicciones": 0,
+            "por_categoria": dict.fromkeys(ESTADOS, 0),
+            "ultimas_predicciones": [],
+            "fecha_ultima_prediccion": None,
+        }
+    )
+    assert html.count('class="dx-stat ') == 5 and "<strong>0</strong>" in html
+    assert "sin predicciones todavía" in html and "Aún no hay predicciones" in html
+
+
+def test_estadisticas_con_datos_y_escape() -> None:
+    html = estadisticas_html(
+        {
+            "total_predicciones": 2,
+            "por_categoria": {"ENFERMEDAD TERMINAL": 2},
+            "ultimas_predicciones": [
+                {"id": "C-0002", "fecha": "2026-11-05T18:30:00Z",
+                 "nombre": "Ana <b>Gómez</b>", "estado": "ENFERMEDAD TERMINAL"},
+            ],
+            "fecha_ultima_prediccion": "2026-11-05T18:30:00Z",
+        }
+    )  # fmt: skip
+    assert "dx-estado-terminal" in html and "<strong>2</strong>" in html
+    assert "Total de predicciones: 2" in html and "2026-11-05 18:30 (UTC)" in html
+    assert "Ana &lt;b&gt;Gómez&lt;/b&gt;" in html and "<b>" not in html

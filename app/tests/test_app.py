@@ -23,6 +23,22 @@ RESPUESTA: dict[str, Any] = {
     "aviso": "Solo didáctico.",
 }
 
+ESTADISTICAS: dict[str, Any] = {
+    "total_predicciones": 1,
+    "por_categoria": {
+        "NO ENFERMO": 0,
+        "ENFERMEDAD LEVE": 0,
+        "ENFERMEDAD AGUDA": 1,
+        "ENFERMEDAD CRÓNICA": 0,
+        "ENFERMEDAD TERMINAL": 0,
+    },
+    "ultimas_predicciones": [
+        {"id": "C-0001", "fecha": "2026-11-05T18:30:00Z", "nombre": "Marta Ospina Cruz",
+         "estado": "ENFERMEDAD AGUDA"},
+    ],
+    "fecha_ultima_prediccion": "2026-11-05T18:30:00Z",
+}  # fmt: skip
+
 
 @pytest.fixture
 def api(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
@@ -34,6 +50,7 @@ def api(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
 
     monkeypatch.setattr(client, "predecir", predecir)
     monkeypatch.setattr(client, "consultas", lambda *a, **k: [RESPUESTA])
+    monkeypatch.setattr(client, "estadisticas", lambda *a, **k: ESTADISTICAS)
     return enviados
 
 
@@ -47,6 +64,22 @@ def test_renderiza_sin_excepciones(api: list[dict[str, Any]]) -> None:
     assert at.text_input(key="nombre").value == "Marta Ospina Cruz"
     assert "Aún no hay una consulta" in _html(at)
     assert "ENFERMEDAD AGUDA" in _html(at)  # el historial (doble) ya trae una consulta
+
+
+def test_menu_inicia_en_consultas_y_lleva_a_estadisticas(api: list[dict[str, Any]]) -> None:
+    at = AppTest.from_file(APP, default_timeout=30).run()
+    assert at.button_group(key="vista").value == "Consultas"
+    assert '<div class="dx-stats">' not in _html(at)
+    at.text_input(key="nombre").set_value("Pedro Pérez Gil").run()
+    at.button_group(key="vista").set_value("Estadísticas").run()
+    assert not at.exception
+    assert [s.value for s in at.subheader] == ["Estadísticas"]
+    html = _html(at)
+    assert '<div class="dx-stats">' in html and "ENFERMEDAD TERMINAL" in html
+    assert "Última predicción: 2026-11-05 18:30 (UTC)" in html
+    assert at.get("download_button")[0].proto.label == "Descargar reporte en Excel"
+    at.button_group(key="vista").set_value("Consultas").run()
+    assert at.text_input(key="nombre").value == "Pedro Pérez Gil"  # el formulario se conserva
 
 
 def test_consultar_envia_payload_y_muestra_resultado(api: list[dict[str, Any]]) -> None:
@@ -87,9 +120,14 @@ def test_errores_de_la_api(monkeypatch: pytest.MonkeyPatch) -> None:
         raise client.ApiValidationError(["temperatura: fuera de rango"])
 
     monkeypatch.setattr(client, "consultas", caida)
+    monkeypatch.setattr(client, "estadisticas", caida)
     monkeypatch.setattr(client, "predecir", caida)
     at = AppTest.from_file(APP, default_timeout=30).run()
     assert any("historial" in w.value for w in at.warning)
+    at.button_group(key="vista").set_value("Estadísticas").run()
+    assert any("estadísticas" in w.value for w in at.warning)
+    assert not at.get("download_button")
+    at.button_group(key="vista").set_value("Consultas").run()
     at.button(key="consultar").click().run()
     assert not at.exception and any("No se pudo conectar" in e.value for e in at.error)
 

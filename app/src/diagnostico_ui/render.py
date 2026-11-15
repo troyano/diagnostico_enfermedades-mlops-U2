@@ -6,7 +6,7 @@ from html import escape
 from typing import Any
 
 from diagnostico_ui.contenido import AVISO, PIE_LINEAS, PIE_NOTA, TITULO
-from diagnostico_ui.estados import obtener_estado
+from diagnostico_ui.estados import ESTADOS, obtener_estado
 
 
 def formato_temperatura(valor: Any) -> str:
@@ -95,3 +95,38 @@ def historial_html(consultas: Sequence[dict[str, Any]]) -> str:
         '<th class="dx-num">Temp. °C</th><th>Regla aplicada</th></tr></thead>'
         f"<tbody>{''.join(filas)}</tbody></table></div>"
     )
+
+
+def estadisticas_html(datos: dict[str, Any]) -> str:
+    """Conteo por categoría, fecha de la última predicción y tabla de las últimas 5."""
+    conteos = datos.get("por_categoria") or {}
+    tarjetas = "".join(
+        f'<div class="dx-stat dx-estado-{e.clase}"><small>{_e(e.nombre)}</small>'
+        f"<strong>{_e(conteos.get(nombre, 0))}</strong></div>"
+        for nombre, e in ESTADOS.items()
+    )
+    total = datos.get("total_predicciones", 0)
+    ultima = datos.get("fecha_ultima_prediccion")
+    resumen = (
+        f'<p class="dx-meta">Total de predicciones: {_e(total)} · Última predicción: '
+        f"{_e(formato_fecha(ultima)) + ' (UTC)' if ultima else 'sin predicciones todavía'}</p>"
+    )
+    recientes = datos.get("ultimas_predicciones") or []
+    if not recientes:
+        tabla = '<div class="dx-empty">Aún no hay predicciones.</div>'
+    else:
+        filas = []
+        for p in recientes:
+            estado = obtener_estado(str(p.get("estado", "")))
+            filas.append(
+                f"<tr><td>{_e(p.get('id'))}</td><td>{_e(formato_fecha(p.get('fecha')))}</td>"
+                f"<td>{_e(p.get('nombre'))}</td>"
+                f'<td><span class="dx-tag dx-estado-{estado.clase}">{_e(estado.nombre)}</span>'
+                "</td></tr>"
+            )
+        tabla = (
+            '<div class="dx-scroll"><table class="dx-table"><thead><tr><th>Consulta</th>'
+            "<th>Fecha (UTC)</th><th>Paciente</th><th>Estado</th></tr></thead>"
+            f"<tbody>{''.join(filas)}</tbody></table></div>"
+        )
+    return f'<div class="dx-stats">{tarjetas}</div>{resumen}{tabla}'
