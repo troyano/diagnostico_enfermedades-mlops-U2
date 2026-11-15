@@ -4,7 +4,7 @@ from collections.abc import Sequence
 
 from diagnostico_api.schemas import EstadoSalud, Resultado, Resumen, Sintoma
 
-VERSION_MODELO = "simulado-0.1.0"
+VERSION_MODELO = "simulado-0.2.0"
 AVISO = (
     "Reglas didácticas: la clasificación no demuestra que una persona esté enferma "
     "ni permite descartar una enfermedad."
@@ -16,9 +16,14 @@ def predecir(temperatura: float, sintomas: Sequence[Sintoma]) -> Resultado:
     n = len(sintomas)
     mi = max((s.intensidad for s in sintomas), default=0)
     md = max((s.duracion_dias for s in sintomas), default=0)
+    # Un mismo síntoma muy intenso (9 o más) que persiste 90 días o más
+    terminal = any(s.intensidad >= 9 and s.duracion_dias >= 90 for s in sintomas)
 
     if n == 0 and temperatura < 37.5:
         estado, regla = EstadoSalud.NO_ENFERMO, "Sin síntomas y temperatura menor a 37,5 °C"
+    elif terminal:
+        estado = EstadoSalud.TERMINAL
+        regla = "Un síntoma de intensidad 9 o más con 90 días o más de duración"
     elif n > 0 and md >= 30:
         estado, regla = EstadoSalud.CRONICA, "Hay síntomas con 30 días o más de duración"
     elif n > 0 and (mi >= 7 or temperatura >= 38.5):

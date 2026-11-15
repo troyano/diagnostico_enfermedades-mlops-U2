@@ -1,36 +1,42 @@
-# mlops-enfermedades
+# diagnostico_enfermedades-mlops-U2
 
-Servicio de apoyo al médico que, a partir de síntomas del paciente, devuelve un estado simulado:
-**NO ENFERMO**, **ENFERMEDAD LEVE**, **ENFERMEDAD AGUDA** o **ENFERMEDAD CRÓNICA**.
-No hay un modelo entrenado: una función con reglas simula el modelo (Semanas 1-2 de MLOps).
+Servicio de apoyo al médico que, a partir de los síntomas de un paciente, devuelve un estado de
+salud simulado: **NO ENFERMO**, **ENFERMEDAD LEVE**, **ENFERMEDAD AGUDA**, **ENFERMEDAD CRÓNICA** o
+**ENFERMEDAD TERMINAL**. No hay un modelo entrenado: una función con reglas simula las predicciones.
 
-## Objetivo del taller
+Proyecto de la Unidad 2 de MLOps (Maestría en Inteligencia Artificial Aplicada, ICESI, 2026-II).
 
-Este repositorio es la entrega del taller **Semanas 1-2: Pipeline de MLOps + imagen de Docker**.
+## El problema
 
-El problema que plantea el docente: en medicina existe abundante información de los pacientes, pero
-para las enfermedades poco comunes, llamadas huérfanas, los datos escasean. Se requiere un modelo que,
-a partir de los síntomas de un paciente, prediga si es posible que sufra alguna enfermedad, tanto
-común (muchos datos) como huérfana (pocos datos).
+En medicina existe mucha información de los pacientes, pero para las enfermedades poco comunes,
+llamadas huérfanas, los datos escasean. Se requiere un modelo que, dados los síntomas de un
+paciente, prediga si es posible que sufra alguna enfermedad, tanto común (muchos datos) como
+huérfana (pocos datos).
 
-El taller tiene dos partes, cada una con el 50 % de la unidad:
+## Propósito
 
-1. **Pipeline de MLOps:** proponer el proceso completo end-to-end (diseño, desarrollo y producción)
-   para construir ese modelo, con un diagrama general y la explicación de cada etapa.
-2. **Imagen de Docker:** construir un servicio que el médico pueda correr en su propio equipo. Una
-   función simulada recibe por lo menos 3 valores y devuelve uno de cuatro estados: **NO ENFERMO**,
-   **ENFERMEDAD LEVE**, **ENFERMEDAD AGUDA** o **ENFERMEDAD CRÓNICA**.
+Pasar de la solución local del médico (Unidad 1: pipeline de MLOps e imagen de Docker) a un
+proyecto controlado en GitHub:
 
-## Dónde está cada entregable
+1. **Control de versiones:** ramas, commits y Pull Requests para incorporar cada cambio.
+2. **Nuevos requerimientos:** la categoría **ENFERMEDAD TERMINAL** (5 estados en total) y un reporte
+   de estadísticas de las predicciones.
+3. **CI/CD con GitHub Actions:** pruebas automáticas en cada Pull Request y, al integrar en `main`,
+   nuevas pruebas y publicación de la imagen Docker en GitHub Packages.
 
-| Requisito del taller | Dónde está |
+La solución de partida es la entrega de la Unidad 1, en
+[troyano/mlops-enfermedades](https://github.com/troyano/mlops-enfermedades). Su pipeline de MLOps
+(`docs/brief.md`) se quedó en ese repositorio y no forma parte de este.
+
+## Dónde está cada parte
+
+| Parte | Dónde está |
 |---|---|
-| **Parte 1:** pipeline de MLOps (diagrama general y explicación de etapas) | [`docs/brief.md`](docs/brief.md) |
-| **Parte 2:** función simulada con los 4 estados | [`api/src/diagnostico_api/model.py`](api/src/diagnostico_api/model.py), función `predecir()` |
-| **Parte 2:** Dockerfile | [`api/Dockerfile`](api/Dockerfile) (API) y [`app/Dockerfile`](app/Dockerfile) (interfaz) |
-| **Parte 2:** forma de recibir los datos del médico | Página web en Streamlit (puerto 8501) y punto final `POST /predecir` en FastAPI (puerto 8000) |
-| **Parte 2:** README con construcción, ejecución y cómo obtener respuestas | Este documento |
-| **Parte 2:** extras | `docker-compose.yml`, historial de consultas, pruebas en `api/tests/` y `app/tests/`, diseño de la interfaz en [`docs/interfaz.md`](docs/interfaz.md) |
+| Función simulada con los 5 estados | [`api/src/diagnostico_api/model.py`](api/src/diagnostico_api/model.py), función `predecir()` |
+| Dockerfiles | [`api/Dockerfile`](api/Dockerfile) (API) y [`app/Dockerfile`](app/Dockerfile) (interfaz) |
+| Forma de recibir los datos del médico | Página web en Streamlit (puerto 8501) y punto final `POST /predecir` en FastAPI (puerto 8000) |
+| Pruebas | `api/tests/` y `app/tests/` |
+| Diseño de la interfaz | [`docs/interfaz.md`](docs/interfaz.md) |
 
 ## Estructura
 
@@ -38,7 +44,7 @@ El taller tiene dos partes, cada una con el 50 % de la unidad:
 |---|---|
 | `api/` | Microservicio FastAPI (`diagnostico_api`), puerto 8000 |
 | `app/` | Interfaz web Streamlit (`diagnostico_ui`), puerto 8501 |
-| `docs/` | Pipeline de MLOps (`brief.md`, parte 1) y diseño de la interfaz (`interfaz.md`, con prototipo) |
+| `docs/` | Diseño de la interfaz (`interfaz.md`, con prototipo) |
 | `CONTRIBUTING.md` | Flujo de ramas y commits |
 | `docker-compose.yml`, `Makefile`, `.env.example` | Entorno reproducible y atajos |
 
@@ -118,18 +124,40 @@ curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
 curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
   -d '{"nombre":"Jorge Salazar Mena","temperatura":36.8,"sintomas":[
         {"descripcion":"Dolor articular","intensidad":3,"duracion_dias":45}]}'
+
+# ENFERMEDAD TERMINAL
+curl -s -X POST localhost:8000/predecir -H 'Content-Type: application/json' \
+  -d '{"nombre":"Rosa Delgado Peña","temperatura":37.2,"sintomas":[
+        {"descripcion":"Dolor óseo","intensidad":9,"duracion_dias":120},
+        {"descripcion":"Pérdida de peso","intensidad":6,"duracion_dias":150}]}'
 ```
 
 La respuesta incluye `id`, `fecha`, `estado`, `regla` (la regla aplicada), `resumen`,
 `version_modelo` y un `aviso` didáctico.
 
 La función `predecir()` usa la temperatura y, de la lista de síntomas, la cantidad, la intensidad
-máxima y la duración máxima en días. Reglas, evaluadas en orden (la primera que se cumple):
+máxima, la duración máxima en días y si algún síntoma es a la vez muy intenso y prolongado. Reglas,
+evaluadas en orden (la primera que se cumple):
 
 1. **NO ENFERMO:** sin síntomas y temperatura menor a 37,5 °C.
-2. **ENFERMEDAD CRÓNICA:** hay síntomas y alguno dura 30 días o más.
-3. **ENFERMEDAD AGUDA:** hay síntomas y (intensidad máxima de 7 o más, o temperatura de 38,5 °C o más).
-4. **ENFERMEDAD LEVE:** cualquier otro caso.
+2. **ENFERMEDAD TERMINAL:** un mismo síntoma tiene intensidad de 9 o más y dura 90 días o más.
+3. **ENFERMEDAD CRÓNICA:** hay síntomas y alguno dura 30 días o más.
+4. **ENFERMEDAD AGUDA:** hay síntomas y (intensidad máxima de 7 o más, o temperatura de 38,5 °C o más).
+5. **ENFERMEDAD LEVE:** cualquier otro caso.
+
+TERMINAL va antes que CRÓNICA porque es la más grave y, de lo contrario, CRÓNICA la atraparía
+(todo síntoma de 90 días o más también supera los 30). Exigir que la intensidad y la duración sean
+del **mismo** síntoma evita que un síntoma leve y prolongado, sumado a otro intenso y breve, se
+clasifique como terminal: en ese caso el resultado es CRÓNICA. La versión de las reglas es
+`simulado-0.2.0`.
+
+| Temperatura | Síntomas (intensidad, días) | Estado |
+|---|---|---|
+| 37,0 | (9, 90) | ENFERMEDAD TERMINAL |
+| 39,5 | (10, 365), (3, 2) | ENFERMEDAD TERMINAL |
+| 37,0 | (9, 89) | ENFERMEDAD CRÓNICA |
+| 37,0 | (8, 120) | ENFERMEDAD CRÓNICA |
+| 37,0 | (9, 5), (2, 120) | ENFERMEDAD CRÓNICA |
 
 Si los datos no son válidos, la API responde `422` con mensajes en español:
 
@@ -166,10 +194,19 @@ make test        # pytest
 
 Ver `.env.example`.
 
-## Flujo de ramas
+## Flujo de trabajo
 
-`feature/*` → `dev` → `stage` → `main`, con etiqueta por versión. Detalle en [CONTRIBUTING.md](CONTRIBUTING.md).
+- `main` es la única rama permanente y está protegida: los cambios entran solo por Pull Request.
+- Cada cambio se desarrolla en su propia rama de trabajo y se integra con un Pull Request a `main`.
+  No se usan ramas `dev` ni `stage`.
+- Los nombres de las ramas van **sin tildes ni ñ**, en minúsculas y con guiones (convención ASCII):
+  por ejemplo `solucion-inicial`, `enfermedad-terminal` y `anadir-github-actions`, aunque el
+  enunciado las escriba `solución-inicial` y `añadir-github-actions`. Así se evitan problemas de
+  codificación en la terminal, en las URL y en las herramientas de CI.
+- Los commits siguen [Conventional Commits](https://www.conventionalcommits.org/es/) en español.
+
+Detalle en [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Autores
 
-Eduar Troyano Velasquez y Alexander Amador. Maestría en Inteligencia Artificial Aplicada, ICESI. Materia: Machine Learning Operations – MLOps, 2026-II.
+Eduar Troyano Velasquez y Alexander Amador. Maestría en Inteligencia Artificial Aplicada, ICESI. Materia: Machine Learning Operations, MLOps, 2026-II.

@@ -20,15 +20,17 @@ CONSULTA: dict[str, Any] = {
     "estado": "ENFERMEDAD AGUDA",
     "regla": "Intensidad ≥ 7 & menos de 30 días",
     "resumen": {"cantidad_sintomas": 1, "intensidad_maxima": 8, "duracion_maxima_dias": 3},
-    "version_modelo": "simulado-0.1.0",
+    "version_modelo": "simulado-0.2.0",
     "aviso": "Solo didáctico.",
 }
 
 
-def test_estados_cubren_los_cuatro_y_tienen_neutro() -> None:
+def test_estados_cubren_los_cinco_y_tienen_neutro() -> None:
     assert set(ESTADOS) == {
         "NO ENFERMO", "ENFERMEDAD LEVE", "ENFERMEDAD AGUDA", "ENFERMEDAD CRÓNICA",
+        "ENFERMEDAD TERMINAL",
     }  # fmt: skip
+    assert obtener_estado("ENFERMEDAD TERMINAL").clase == "terminal"
     assert obtener_estado("OTRO").clase == "neutro"
 
 
@@ -37,7 +39,7 @@ def test_resultado_incluye_estado_clase_regla_y_escapa() -> None:
     assert "ENFERMEDAD AGUDA" in html and "dx-estado-aguda" in html
     assert "Intensidad ≥ 7 &amp; menos de 30 días" in html
     assert "Ana &lt;b&gt;Gómez&lt;/b&gt;" in html and "<b>" not in html
-    assert "39,0 °C" in html and "C-0007" in html and "simulado-0.1.0" in html
+    assert "39,0 °C" in html and "C-0007" in html and "simulado-0.2.0" in html
     assert "Solo didáctico." in html
 
 

@@ -16,6 +16,7 @@ class EstadoSalud(StrEnum):
     LEVE = "ENFERMEDAD LEVE"
     AGUDA = "ENFERMEDAD AGUDA"
     CRONICA = "ENFERMEDAD CRÓNICA"
+    TERMINAL = "ENFERMEDAD TERMINAL"
 
 
 class Sintoma(BaseModel):

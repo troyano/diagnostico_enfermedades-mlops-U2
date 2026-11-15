@@ -9,6 +9,7 @@
   --dx-green: #4db87b;
   --dx-orange: #eb6b3f;
   --dx-violet: #8a5cf0;
+  --dx-red: #c8344d;
   --dx-bg: #0c0c14;
   --dx-surface: #16161f;
   --dx-primary: #8586f7;
@@ -62,6 +63,7 @@ div[data-testid="stTextInput"] input, div[data-testid="stNumberInput"] input { m
 .dx-estado-leve { background: var(--dx-lime); color: var(--dx-ink); }
 .dx-estado-aguda { background: var(--dx-orange); color: var(--dx-ink); }
 .dx-estado-cronica { background: var(--dx-violet); color: #fff; }
+.dx-estado-terminal { background: var(--dx-red); color: #fff; }
 .dx-estado-neutro { background: var(--dx-line); color: var(--dx-fg); }
 
 /* --- Historial --- */

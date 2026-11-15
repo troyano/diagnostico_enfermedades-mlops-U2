@@ -47,4 +47,11 @@ EJEMPLOS: tuple[Ejemplo, ...] = (
         ),
     ),
     Ejemplo("cronica", "Crónica", "Jorge Salazar Mena", 36.8, (("Dolor articular", 3, 45),)),
+    Ejemplo(
+        "terminal",
+        "Terminal",
+        "Rosa Delgado Peña",
+        37.2,
+        (("Dolor óseo", 9, 120), ("Pérdida de peso", 6, 150)),
+    ),
 )

@@ -3,24 +3,28 @@
 ## Ramas
 
 ```
-feature/*  ──PR──►  dev  ──PR──►  stage  ──PR──►  main  ── etiqueta vX.Y.Z
-(trabajo)        (integración)  (validación)    (entrega)
+rama de trabajo  ──PR──►  main
 ```
 
-| Rama | Propósito | Quién escribe en ella | Regla |
-|---|---|---|---|
-| `main` | Versión entregable. Siempre arranca con Docker | Solo PR desde `stage` | Protegida: exige PR, sin push directo. Cada entrega lleva una etiqueta |
-| `stage` | Candidato a entrega: el equipo clona, ejecuta `docker compose up` y revisa el README | Solo PR desde `dev` | Solo se corrige lo que falle en la validación |
-| `dev` | Integración y pulido conjunto | PR desde `feature/*` | Protegida: exige PR |
-| `feature/*` | Una pieza de trabajo acotada | Su autor | Se borra al fusionar |
+| Rama | Propósito | Regla |
+|---|---|---|
+| `main` | Versión entregable. Siempre arranca con Docker | Protegida: exige Pull Request, sin push directo y sin excepción para administradores |
+| Rama de trabajo | Un requerimiento o cambio acotado | Se integra con un Pull Request a `main` y se borra al fusionar |
 
-## Nombres de ramas de trabajo
+No se usan ramas `dev` ni `stage`.
 
-`feature/<tema-corto>`, por ejemplo `feature/api-predecir` o `feature/app-formulario`. Para correcciones sobre `stage` se usa `fix/<tema-corto>` con PR a `stage` y luego a `dev`.
+## Nombres de ramas
+
+En ASCII: sin tildes ni ñ, en minúsculas y con guiones. Por ejemplo `enfermedad-terminal`,
+`reporte-estadisticas` o `anadir-github-actions`. El enunciado escribe `solución-inicial` y
+`añadir-github-actions`; aquí se usan `solucion-inicial` y `anadir-github-actions` para evitar
+problemas de codificación en la terminal, en las URL y en las herramientas de CI.
 
 ## Commits
 
-Se usa [Conventional Commits](https://www.conventionalcommits.org/es/): `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, con un alcance opcional (`feat(api): ...`). Un commit por fase o cambio lógico.
+Se usa [Conventional Commits](https://www.conventionalcommits.org/es/) en español: `feat`, `fix`,
+`docs`, `refactor`, `test`, `chore`, con un alcance opcional (`feat(api): ...`). Cada requerimiento
+va en al menos un commit propio, para que sus cambios se vean por separado.
 
 ## Antes de abrir un PR
 
@@ -30,9 +34,11 @@ docker compose up --build -d   # api en :8000 y app en :8501 deben quedar health
 docker compose down -v
 ```
 
-## Liberar una versión
+Las pruebas de la API usan `fcntl`, que solo existe en Linux y macOS. En Windows, córrelas en WSL o
+dentro de Docker.
 
-1. Validar en `dev` y abrir PR `dev` → `stage`.
-2. El equipo revisa `stage` clonándolo en una carpeta limpia y siguiendo el README.
-3. Abrir PR `stage` → `main`.
-4. Etiquetar: `git tag v1.0.0 && git push origin v1.0.0`. GitHub genera el ZIP de esa etiqueta.
+## Pull Requests
+
+1. Publicar la rama: `git push -u origin <rama>`.
+2. Abrir el PR contra `main`, sin revisores, con un resumen de los cambios.
+3. Fusionar con **Create a merge commit** y borrar la rama.

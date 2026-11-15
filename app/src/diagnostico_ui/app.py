@@ -19,6 +19,8 @@ from diagnostico_ui.render import (
 from diagnostico_ui.styles import inject_styles
 from diagnostico_ui.validation import MAX_SINTOMAS, validar_consulta
 
+POR_FILA = 3  # botones de ejemplo por fila
+
 
 def _cargar_ejemplo(clave: str) -> None:
     ejemplo = ejemplo_por_clave(clave)
@@ -90,12 +92,14 @@ def _formulario(api_url: str) -> None:
             },
         )
         st.markdown('<div class="dx-label">Cargar un ejemplo</div>', unsafe_allow_html=True)
-        cols = st.columns(len(EJEMPLOS))
-        for col, e in zip(cols, EJEMPLOS, strict=True):
-            col.button(
-                e.etiqueta, key=f"ej_{e.clave}", on_click=_cargar_ejemplo, args=(e.clave,),
-                width="stretch",
-            )  # fmt: skip
+        # Dos filas (3 y 2) para que las etiquetas no se corten en pantallas angostas
+        for inicio in range(0, len(EJEMPLOS), POR_FILA):
+            cols = st.columns(POR_FILA)
+            for col, e in zip(cols, EJEMPLOS[inicio : inicio + POR_FILA], strict=False):
+                col.button(
+                    e.etiqueta, key=f"ej_{e.clave}", on_click=_cargar_ejemplo, args=(e.clave,),
+                    width="stretch",
+                )  # fmt: skip
         b1, b2 = st.columns(2)
         consultar = b1.button("Consultar", key="consultar", type="primary", width="stretch")
         b2.button("Limpiar formulario", key="limpiar", on_click=_limpiar, width="stretch")
