@@ -35,7 +35,7 @@ La solución de partida es la entrega de la Unidad 1, en
 | Función simulada con los 5 estados | [`api/src/diagnostico_api/model.py`](api/src/diagnostico_api/model.py), función `predecir()` |
 | Dockerfiles | [`api/Dockerfile`](api/Dockerfile) (API) y [`app/Dockerfile`](app/Dockerfile) (interfaz) |
 | Forma de recibir los datos del médico | Página web en Streamlit (puerto 8501) y punto final `POST /predecir` en FastAPI (puerto 8000) |
-| Reporte de estadísticas | Punto final `GET /estadisticas` ([`api/src/diagnostico_api/estadisticas.py`](api/src/diagnostico_api/estadisticas.py)), archivo exportado `/data/predicciones.csv` y sección "Estadísticas" de la interfaz |
+| Reporte de estadísticas | Punto final `GET /estadisticas` ([`api/src/diagnostico_api/estadisticas.py`](api/src/diagnostico_api/estadisticas.py)), archivo exportado `/data/predicciones.csv`, opción "Estadísticas" del menú de la interfaz y descarga en Excel ([`app/src/diagnostico_ui/reporte.py`](app/src/diagnostico_ui/reporte.py)) |
 | Pruebas | `api/tests/` y `app/tests/` |
 | Diseño de la interfaz | [`docs/interfaz.md`](docs/interfaz.md) |
 
@@ -95,8 +95,15 @@ docker run --rm -p 8501:8501 -e API_URL=http://host.docker.internal:8000 \
 
 ### Desde el navegador
 
-Abre http://localhost:8501, escribe el nombre del paciente, la temperatura y agrega los síntomas
-(descripción, intensidad de 0 a 10 y días). También puedes usar Swagger en http://localhost:8000/docs.
+Abre http://localhost:8501. La interfaz tiene un menú con dos opciones:
+
+- **Consultas:** escribe el nombre del paciente, la temperatura y agrega los síntomas (descripción,
+  intensidad de 0 a 10 y días). Debajo aparece el historial de consultas.
+- **Estadísticas:** el reporte para los médicos (total por categoría, últimas 5 predicciones y fecha
+  de la última) y el botón **Descargar reporte en Excel**.
+
+Al cambiar de opción, el formulario conserva lo que se había escrito. También puedes usar Swagger
+en http://localhost:8000/docs.
 
 ### Con `curl`
 
@@ -208,8 +215,14 @@ curl -s localhost:8000/estadisticas
 ```
 
 Antes de la primera predicción responde `200` con las 5 categorías en 0, la lista vacía y
-`"fecha_ultima_prediccion": null`. La interfaz muestra lo mismo en la sección **Estadísticas**,
-encima del historial.
+`"fecha_ultima_prediccion": null`. La interfaz muestra lo mismo en la opción **Estadísticas** del
+menú, donde el botón **Descargar reporte en Excel** genera `reporte_estadisticas_AAAAMMDD_HHMM.xlsx`
+con dos hojas, cada una con una tabla de Excel:
+
+| Hoja | Contenido |
+|---|---|
+| `Resumen` | Fecha de generación, total de predicciones, fecha de la última y la tabla `PrediccionesPorCategoria` con las 5 categorías |
+| `Ultimas 5` | Tabla `UltimasPredicciones` con consulta, fecha (UTC), paciente y estado, la más reciente primero |
 
 Si el volumen `consultas` viene de una versión anterior, las consultas viejas siguen en el historial
 pero no en el reporte, porque se crearon antes de que existiera el archivo exportado. Para una

@@ -8,29 +8,32 @@ Boceto y decisiones de la interfaz para el médico (servicio `app/`, Streamlit).
 ┌────────────────────────────────────────────────────────────────┐
 │ ████ Apoyo a la decisión médica ████ │ ░░ Uso didáctico ░░░░░░ │
 │ ████ MLOps · Unidad 2            ████ │ ░░ (aviso de reglas) ░░ │
-├───────────────────────────────────────┬────────────────────────┤
+├────────────────────────────────────────────────────────────────┤
+│ [ 🩺 Consultas            ][ 📊 Estadísticas                 ] │  ← menú
+├────────────────────────────────────────────────────────────────┤
+
+Opción "Consultas"
+┌───────────────────────────────────────┬────────────────────────┐
 │ Nueva consulta                        │ Resultado              │
 │ Nombre completo [________________]    │ ┌────────────────────┐ │
-│ Temperatura (°C) [ 39.0 ]             │ │ ENFERMEDAD AGUDA   │ │
-│                                       │ │ regla aplicada     │ │
-│ Síntomas reportados (4 de 20)         │ └────────────────────┘ │
-│ ┌──────────────────┬────────┬─────┬──┐│ Síntomas       4       │
-│ │ Descripción      │Intens. │Días │  ││ Intensidad máx 8       │
-│ │ Dolor de cabeza  │   8    │  3  │✕ ││ Días máx       3       │
-│ │ Fiebre alta      │   7    │  3  │✕ ││ Temperatura    39,0 °C │
-│ └──────────────────┴────────┴─────┴──┘│ Paciente · consulta ·  │
-│ [+ Agregar síntoma]                   │ versión del modelo     │
-│ Ejemplos: [No enfermo][Leve][Aguda]   │                        │
-│           [Crónica][Terminal]         │                        │
+│ Temperatura (°C) [39,0]               │ │ ENFERMEDAD AGUDA   │ │
+│ Síntomas (máx. 20)                    │ │ regla aplicada     │ │
+│ ┌ Descripción │ Intensidad │ Días ┐   │ └────────────────────┘ │
+│ Ejemplos: [No enfermo][Leve][Aguda]   │ Síntomas · Intensidad  │
+│           [Crónica][Terminal]         │ Días · Temperatura     │
 │ [Consultar]  [Limpiar formulario]     │                        │
 ├───────────────────────────────────────┴────────────────────────┤
-│ Estadísticas                                                   │
-│ [No enfermo 1][Leve 0][Aguda 1][Crónica 1][Terminal 1]         │
-│ Total de predicciones: 4 · Última predicción: fecha (UTC)      │
-│ Consulta │ Fecha │ Paciente │ Estado      (últimas 5)          │
-├────────────────────────────────────────────────────────────────┤
 │ Historial de consultas (más recientes primero)                 │
 │ Fecha │ Paciente │ Estado │ Síntomas │ Temp. │ Regla aplicada   │
+└────────────────────────────────────────────────────────────────┘
+
+Opción "Estadísticas"
+┌────────────────────────────────────────────────────────────────┐
+│ Estadísticas                                                   │
+│ [No enfermo 1][Leve 1][Aguda 2][Crónica 1][Terminal 1]         │
+│ Total de predicciones: 6 · Última predicción: fecha (UTC)      │
+│ Consulta │ Fecha │ Paciente │ Estado      (últimas 5)          │
+│ [Descargar reporte en Excel]                                   │
 ├────────────────────────────────────────────────────────────────┤
 │ Pie: institución, programa, materia e integrantes              │
 └────────────────────────────────────────────────────────────────┘
@@ -42,7 +45,8 @@ Boceto y decisiones de la interfaz para el médico (servicio `app/`, Streamlit).
 - **Valores derivados para la función:** cantidad de síntomas (filas), intensidad máxima y días máximos.
 - **Validación:** el servicio valida con Pydantic y devuelve mensajes claros. La interfaz aplica los mismos límites antes de enviar y muestra los errores de la API.
 - **Resultado:** estado con color propio, regla aplicada, versión del modelo y aviso didáctico.
-- **Estadísticas:** cinco tarjetas con el total por categoría (con el color de cada estado), el total y la fecha de la última predicción, y una tabla con las últimas 5. Los datos vienen de `GET /estadisticas`, que lee el archivo de texto `predicciones.csv` exportado por la API. En pantallas angostas las tarjetas pasan a dos columnas.
+- **Menú:** dos opciones, Consultas y Estadísticas, en un control segmentado a todo el ancho. Al cambiar de opción se conservan el nombre, la temperatura y los síntomas que se habían escrito.
+- **Estadísticas:** cinco tarjetas con el total por categoría (con el color de cada estado), el total y la fecha de la última predicción, y una tabla con las últimas 5. Los datos vienen de `GET /estadisticas`, que lee el archivo de texto `predicciones.csv` exportado por la API. En pantallas angostas las tarjetas pasan a dos columnas. El botón **Descargar reporte en Excel** genera un `.xlsx` con las hojas `Resumen` y `Ultimas 5`, cada una con una tabla de Excel.
 - **Historial:** cada consulta se guarda en un archivo JSON dentro de un volumen del contenedor de la API; la interfaz lo muestra en una tabla.
 - **Estilos:** una sola hoja de estilos (`styles.css`) cargada desde un único punto, más el tema base de Streamlit en `.streamlit/config.toml`.
 - **Paleta:** azul índigo `#5657EC`, lima `#E3EA55`, negro y blanco, con verde `#4DB87B`, naranja `#EB6B3F`, violeta `#8A5CF0` y rojo `#C8344D` para los estados. Tipografías Sora (títulos) y Figtree (texto).

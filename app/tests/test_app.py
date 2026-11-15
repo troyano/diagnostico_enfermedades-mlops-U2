@@ -66,12 +66,20 @@ def test_renderiza_sin_excepciones(api: list[dict[str, Any]]) -> None:
     assert "ENFERMEDAD AGUDA" in _html(at)  # el historial (doble) ya trae una consulta
 
 
-def test_muestra_la_seccion_de_estadisticas(api: list[dict[str, Any]]) -> None:
+def test_menu_inicia_en_consultas_y_lleva_a_estadisticas(api: list[dict[str, Any]]) -> None:
     at = AppTest.from_file(APP, default_timeout=30).run()
-    assert any(s.value == "Estadísticas" for s in at.subheader)
+    assert at.button_group(key="vista").value == "Consultas"
+    assert '<div class="dx-stats">' not in _html(at)
+    at.text_input(key="nombre").set_value("Pedro Pérez Gil").run()
+    at.button_group(key="vista").set_value("Estadísticas").run()
+    assert not at.exception
+    assert [s.value for s in at.subheader] == ["Estadísticas"]
     html = _html(at)
-    assert "dx-stats" in html and "ENFERMEDAD TERMINAL" in html
+    assert '<div class="dx-stats">' in html and "ENFERMEDAD TERMINAL" in html
     assert "Última predicción: 2026-11-05 18:30 (UTC)" in html
+    assert at.get("download_button")[0].proto.label == "Descargar reporte en Excel"
+    at.button_group(key="vista").set_value("Consultas").run()
+    assert at.text_input(key="nombre").value == "Pedro Pérez Gil"  # el formulario se conserva
 
 
 def test_consultar_envia_payload_y_muestra_resultado(api: list[dict[str, Any]]) -> None:
@@ -116,7 +124,10 @@ def test_errores_de_la_api(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(client, "predecir", caida)
     at = AppTest.from_file(APP, default_timeout=30).run()
     assert any("historial" in w.value for w in at.warning)
+    at.button_group(key="vista").set_value("Estadísticas").run()
     assert any("estadísticas" in w.value for w in at.warning)
+    assert not at.get("download_button")
+    at.button_group(key="vista").set_value("Consultas").run()
     at.button(key="consultar").click().run()
     assert not at.exception and any("No se pudo conectar" in e.value for e in at.error)
 
