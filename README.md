@@ -37,6 +37,7 @@ La solución de partida es la entrega de la Unidad 1, en
 | Forma de recibir los datos del médico | Página web en Streamlit (puerto 8501) y punto final `POST /predecir` en FastAPI (puerto 8000) |
 | Reporte de estadísticas | Punto final `GET /estadisticas` ([`api/src/diagnostico_api/estadisticas.py`](api/src/diagnostico_api/estadisticas.py)), archivo exportado `/data/predicciones.csv`, opción "Estadísticas" del menú de la interfaz y descarga en Excel ([`app/src/diagnostico_ui/reporte.py`](app/src/diagnostico_ui/reporte.py)) |
 | Pruebas | `api/tests/` y `app/tests/` |
+| Pipeline de CI/CD (GitHub Actions) | [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) |
 | Diseño de la interfaz | [`docs/interfaz.md`](docs/interfaz.md) |
 
 ## Estructura
@@ -46,6 +47,7 @@ La solución de partida es la entrega de la Unidad 1, en
 | `api/` | Microservicio FastAPI (`diagnostico_api`), puerto 8000 |
 | `app/` | Interfaz web Streamlit (`diagnostico_ui`), puerto 8501 |
 | `docs/` | Diseño de la interfaz (`interfaz.md`, con prototipo) |
+| `.github/workflows/` | Pipeline de CI/CD con GitHub Actions (`ci-cd.yml`) |
 | `CONTRIBUTING.md` | Flujo de ramas y commits |
 | `docker-compose.yml`, `Makefile`, `.env.example` | Entorno reproducible y atajos |
 
@@ -235,6 +237,41 @@ make lint        # ruff
 make typecheck   # mypy estricto
 make test        # pytest
 ```
+
+## Integración y despliegue continuos (CI/CD)
+
+El pipeline está en [`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml) y corre en
+GitHub Actions, sobre un runner de Ubuntu. Las pruebas se ejecutan directamente en el runner con
+`uv`, sin construir la imagen de Docker.
+
+```mermaid
+flowchart LR
+    PR["PR contra main"] --> C1["Comentario:<br/>CI/CD en acción"]
+    C1 --> P1["Pruebas api y app<br/>Ruff · mypy · pytest"]
+    P1 --> C2["Comentario:<br/>CI/CD terminado con éxito"]
+    M["Commit en main<br/>(merge de un PR)"] --> P2["Pruebas api y app"]
+    P2 --> D["Imágenes Docker publicadas<br/>en GitHub Packages"]
+```
+
+| Evento | Qué hace |
+|---|---|
+| **Pull Request contra `main`** | 1. Comenta en el PR "CI/CD en acción. Ejecutando tareas …". 2. Corre Ruff, mypy y pytest de la API y de la interfaz, en paralelo. 3. Comenta "CI/CD terminado con éxito." o, si algo falla, un aviso para revisar la pestaña Checks |
+| **Commit en `main`** (cada merge, porque `main` está protegida) | 1. Vuelve a correr las pruebas. 2. Si pasan, construye y publica las dos imágenes en GitHub Packages |
+
+Entre las pruebas unitarias están las que pide el enunciado: dados unos parámetros se obtiene el
+estado esperado y aparecen las 5 categorías (`api/tests/test_model.py`), las estadísticas están
+vacías antes de cualquier predicción y la última predicción se refleja en ellas
+(`api/tests/test_estadisticas.py`).
+
+Imágenes publicadas, con las etiquetas `latest` y `sha-<commit>`:
+
+```bash
+docker pull ghcr.io/troyano/diagnostico-api:latest
+docker pull ghcr.io/troyano/diagnostico-ui:latest
+```
+
+Si el repositorio es privado, las imágenes también lo son: antes de `docker pull` hay que iniciar
+sesión con `docker login ghcr.io` usando un token con permiso `read:packages`.
 
 ## Variables de entorno
 

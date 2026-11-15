@@ -41,4 +41,8 @@ dentro de Docker.
 
 1. Publicar la rama: `git push -u origin <rama>`.
 2. Abrir el PR contra `main`, sin revisores, con un resumen de los cambios.
-3. Fusionar con **Create a merge commit** y borrar la rama.
+3. Esperar el pipeline de CI/CD: comenta "CI/CD en acción. Ejecutando tareas …" al empezar y
+   "CI/CD terminado con éxito." si pasan las pruebas de los dos servicios (`Pruebas (api)` y
+   `Pruebas (app)`). La protección de `main` exige que esas dos verificaciones pasen.
+4. Fusionar con **Create a merge commit**. El merge vuelve a correr las pruebas y publica las
+   imágenes en GitHub Packages.

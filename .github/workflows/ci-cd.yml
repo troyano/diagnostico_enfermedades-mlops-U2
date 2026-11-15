@@ -1,0 +1,151 @@
+# Pipeline de CI/CD del proyecto.
+#
+# Evento 1, cada Pull Request contra main:
+#   comenta el inicio en el PR, corre lint, tipos y pruebas unitarias de la API y de la
+#   interfaz en un runner de Ubuntu, y comenta el resultado al terminar.
+# Evento 2, cada commit en main (cada merge, porque main está protegida):
+#   vuelve a correr las pruebas y publica las imágenes Docker de la API y de la interfaz
+#   en GitHub Packages (ghcr.io).
+
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Si llega un commit nuevo al mismo PR o a main, se cancela la ejecución anterior.
+concurrency:
+  group: ci-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  REGISTRO: ghcr.io
+
+jobs:
+  comentar-inicio:
+    name: Comentar inicio en el PR
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comentar "CI/CD en acción"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh pr comment ${{ github.event.pull_request.number }}
+          --repo ${{ github.repository }}
+          --body "CI/CD en acción. Ejecutando tareas …"
+
+  pruebas:
+    name: Pruebas (${{ matrix.servicio }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        servicio: [api, app]
+    defaults:
+      run:
+        working-directory: ${{ matrix.servicio }}
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: ${{ matrix.servicio }}/uv.lock
+
+      - name: Instalar Python y dependencias
+        run: uv sync --locked
+
+      - name: Lint (Ruff)
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Tipos (mypy estricto)
+        run: uv run mypy src tests
+
+      - name: Pruebas unitarias (pytest)
+        run: uv run pytest -v
+
+  comentar-fin:
+    name: Comentar resultado en el PR
+    if: github.event_name == 'pull_request' && always()
+    needs: [comentar-inicio, pruebas]
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comentar "CI/CD terminado con éxito"
+        if: needs.pruebas.result == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh pr comment ${{ github.event.pull_request.number }}
+          --repo ${{ github.repository }}
+          --body "CI/CD terminado con éxito."
+
+      - name: Comentar que hubo errores
+        if: needs.pruebas.result != 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh pr comment ${{ github.event.pull_request.number }}
+          --repo ${{ github.repository }}
+          --body "CI/CD terminado con errores. Revisa la pestaña Checks antes de fusionar."
+
+  publicar:
+    name: Publicar imagen
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: pruebas
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - servicio: api
+            imagen: diagnostico-api
+          - servicio: app
+            imagen: diagnostico-ui
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Iniciar sesión en GitHub Packages
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRO }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Definir nombre y etiquetas de la imagen
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRO }}/${{ github.repository_owner }}/${{ matrix.imagen }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      - name: Construir y publicar
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.servicio }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.imagen }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.imagen }}
